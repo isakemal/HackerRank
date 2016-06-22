@@ -1,7 +1,6 @@
 # Enter your code here. Read input from STDIN. Print output to STDOUT
 import sys
 
-
 ###################################
 # Get optimal starting point, that defeats enemy an has enough to defeat next enemy
 def what_should_player_start_with(power, bullets, next_enemy_power):
@@ -92,6 +91,52 @@ if __name__ == '__main__':
         for a2 in xrange(levels):
             bullets.append(map(int, raw_input().strip().split(' ')))  # bullets
     """
-    print get_min_bullets_backward(levels, enemies, powers, bullets)
-    print get_min_bullets_backward(levels2, enemies2, powers2, bullets2)
+    # print get_min_bullets_backward(levels, enemies, powers, bullets)
+    # print get_min_bullets_backward(levels2, enemies2, powers2, bullets2)
 
+    with open("SuperHeroOutput00.txt") as f:
+        correct_answers = [int(line) for line in f]
+
+    my_answers = []
+    with open("SuperHeroInput00.txt") as f:
+        tests = int(f.readline().strip())  # number of test cases
+        for a0 in xrange(tests):
+            powers = []
+            bullets = []
+            levels, enemies = map(int,
+                                  f.readline().strip().split(' '))  # number of levels, number of enemies on each level
+            for a1 in xrange(levels):
+                powers.append(map(int, f.readline().strip().split(' ')))  # power
+            for a2 in xrange(levels):
+                bullets.append(map(int, f.readline().strip().split(' ')))  # bullets
+
+            my_answer = get_min_bullets_backward(levels, enemies, powers, bullets)
+            if my_answer <> correct_answers[a0]:
+                print "test {} is different: his {}, mine {}.  levels {}, enemies {} ".format(a0, correct_answers[a0], my_answer, levels, enemies)
+
+            my_answers.append(my_answer)
+
+
+"""
+print len(correct_answers), len(my_answers)
+for i, (his, mine) in enumerate(zip(correct_answers, my_answers)):
+    print i, his, mine, his-mine
+
+"""
+#lots of correct answers, but some *way* off
+# index 2 is off by 2
+
+"""
+test 2 is different: his 14, mine 12.  levels 44, enemies 9
+test 15 is different: his 32, mine 28.  levels 24, enemies 5
+test 19 is different: his 70, mine 20.  levels 45, enemies 3
+test 33 is different: his 14, mine 13.  levels 36, enemies 5
+test 37 is different: his 93, mine 77.  levels 8, enemies 4
+test 38 is different: his 4, mine 1.  levels 10, enemies 11
+test 39 is different: his 88, mine 42.  levels 7, enemies 2
+test 43 is different: his 50, mine 15.  levels 28, enemies 4
+test 48 is different: his 38, mine 20.  levels 20, enemies 2
+test 56 is different: his 790, mine 475.  levels 36, enemies 1
+test 60 is different: his 416, mine 336.  levels 16, enemies 1
+"""
+# Lets take test 39, 7 levels
