@@ -3,59 +3,59 @@ import sys
 
 
 ###################################
-# I'm gonna brute force it for now
-def defeatEnemy(power, bullets, ammunition_started, ammunition_aquired):
+# Get optimal starting point, that defeats enemy an has enough to defeat next enemy
+def what_should_player_start_with(power, bullets, next_enemy_power):
     """
-    Returns new set of ammunition after defeating enemy
-    Ammunition_started could be negative
+    Returns the best case scenario of what a player should start with
+    In order to beat the next enemy
+    power = enemy power
+    bullets = enemy bullets
+    next_enemy_power = next enemys power
     """
     # start with aquired
-    _acquired = _power = 0
-
-    _started = ammunition_started
-    _power = power - ammunition_aquired
-
-    if _power > 0:
-        _started = ammunition_started - _power
-
-    _acquired = bullets  # even if there is a surplus, we can't carry it forward
-
-    return _started, _acquired
-
-
-###################################
-def get_battle_combinations(powers, bullets, players):
-    # come back and make this a list comprehension
-    ret = []
-    for (power, bullet) in zip(powers, bullets):
-        for player in players:
-            ret.append(defeatEnemy(power, bullet, player[0], player[1]))
+    ret = power  # have to have enough to defeat the enemy
+    # In order to defeat this enemy, the sum needs to be greater than or equal to 'power'
+    # and there needs to be enough left over to defeat the next enemy
+    increment = next_enemy_power - bullets
+    if increment > 0:
+        ret = ret + increment
 
     return ret
 
 
 ###################################
-def getMinBulletsBruteForce(levels, enemies, powers, bullets):
-    plays = [(0, 0)]
+def pick_the_best_battle(ps, bs, ml):
+    """
+    Returns the starting bullets for the battle is the least amount of the ammunition required
+    in order to defeat the next level.
 
-    for level in xrange(levels):
-        power_for_level = powers[level]
-        bullet_for_level = bullets[level]
-        plays = get_battle_combinations(power_for_level, bullet_for_level, plays)
+    ps: array of powers for the level
+    bs:  array of bullets for the level
+    ml: minimum_for_next_level:  minimum ammunition needed to defeat next level
+    """
+    ret = []
+    for i, (power, bullet) in enumerate(zip(ps, bs)):
+        bullets_needed = what_should_player_start_with(power, bullet, ml)
+        # print (bullets_needed)
+        ret.append(bullets_needed)
 
-    return -max(plays)[0]
+    # The best one is the one is the battle that has to *start*
+    # with the lowest in order to be larger than ml
+    return min(ret)
 
 
 ###################################
+def get_min_bullets_backward(levels, enemies, powers, bullets):
+    min_bullets = min(powers[levels - 1])
+    for level in reversed(xrange(levels - 1)):
+        power_for_level = powers[level]
+        bullet_for_level = bullets[level]
+        min_bullets = pick_the_best_battle(power_for_level, bullet_for_level, min_bullets)
+        # print min_bullets
+
+    return min_bullets
+###################################
 if __name__ == '__main__':
-    print defeatEnemy(1, 1, 1, 0) == (0, 1)
-    print defeatEnemy(1, 1, 1, 1) == (1, 1)
-    print defeatEnemy(1, 2, 1, 1) == (1, 2)
-    print defeatEnemy(2, 1, 1, 1) == (0, 1)
-    print defeatEnemy(2, 2, 1, 1) == (0, 2)
-    print defeatEnemy(2, 1, 1, 2) == (1, 1)
-    print defeatEnemy(3, 1, 1, 2) == (0, 1)
-    print defeatEnemy(5, 1, 1, 2) == (-2, 1)
 
     levels = 3
     enemies = 3
@@ -92,6 +92,6 @@ if __name__ == '__main__':
         for a2 in xrange(levels):
             bullets.append(map(int, raw_input().strip().split(' ')))  # bullets
     """
-    print getMinBulletsBruteForce(levels, enemies, powers, bullets)
-    print getMinBulletsBruteForce(levels2, enemies2, powers2, bullets2)
+    print get_min_bullets_backward(levels, enemies, powers, bullets)
+    print get_min_bullets_backward(levels2, enemies2, powers2, bullets2)
 
