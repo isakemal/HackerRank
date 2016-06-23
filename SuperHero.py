@@ -22,13 +22,15 @@ def defeatEnemy(power, bullets, ammunition_started, ammunition_acquired):
 
 ###################################
 # Get optimal starting point, that defeats enemy an has enough to defeat next enemy
-def what_should_player_start_with(power, bullets, next_enemy_power):
+def what_should_player_start_with(power, bullets, minimum_needed_for_next, next_enemy_power):
     """
     Returns the best case scenario of what a player should start with
     In order to beat the next enemy
     power = enemy power
     bullets = enemy bullets
     next_enemy_power = next enemy's power
+    start = the amount of the starting ammo you need to retain
+        even if there is sufficient bullets remaining
     """
     ret = power  # have to have enough to defeat the enemy
 
@@ -37,15 +39,24 @@ def what_should_player_start_with(power, bullets, next_enemy_power):
 
     # In order to defeat this enemy, the sum needs to be greater than or equal to 'power'
     # and there needs to be enough left over to defeat the next enemy
-    increment = next_enemy_power - bullets
+    increment = minimum_needed_for_next - bullets
+    start_increment = next_enemy_power - bullets
+    # print bullets, ' acquired ', increment, ' increment'
+    start = 0
     if increment > 0:
         ret = ret + increment
+    if start_increment > 0:
+        start = start_increment
 
-    return ret
+
+    # working backwards, start get's used when there aren't
+    # enough bullets in current level to defeat next level
+
+    return ret, start
 
 
 ###################################
-def pick_the_best_battle(ps, bs, ml):
+def pick_the_best_battle(ps, bs, ml, np):
     """
     Returns the starting bullets for the battle is the least amount of the ammunition required
     in order to defeat the next level.
@@ -53,12 +64,14 @@ def pick_the_best_battle(ps, bs, ml):
     ps: array of powers for the level
     bs:  array of bullets for the level
     ml: minimum_for_next_level:  minimum ammunition needed to defeat next level
+    np: next enemy power:  power of next enemy (different than minimum needed for next level)
     """
     ret = []
+
     for i, (power, bullet) in enumerate(zip(ps, bs)):
-        bullets_needed = what_should_player_start_with(power, bullet, ml)
+        bullets_needed, start_to_retain = what_should_player_start_with(power, bullet, ml, np )
         # print (bullets_needed)
-        ret.append(((bullets_needed),i))
+        ret.append(((bullets_needed, start_to_retain, power),i))
 
     # The best one is the one is the battle that has to *start*
     # with the lowest in order to be larger than ml
@@ -68,16 +81,17 @@ def pick_the_best_battle(ps, bs, ml):
 ###################################
 def get_min_bullets_backward(levels, enemies, powers, bullets):
     min_bullets, battle_index =  min( (powers[levels - 1][i],i) for i in xrange(len(powers[levels - 1])))
-    fight_seq = []
-    fight_seq.append((levels - 1, battle_index))  # last battle working backward
+    next_enemy_power = min_bullets
+    start_to_retain = 0
     for level in reversed(xrange(levels - 1)):
         power_for_level = powers[level]
         bullet_for_level = bullets[level]
-        min_bullets, battle_index = pick_the_best_battle(power_for_level, bullet_for_level, min_bullets)
-        print level, ' level - ', battle_index, ' battle_index - ', min_bullets, ' min bullets'
+        (min_bullets, start, next_enemy_power), battle_index = pick_the_best_battle(power_for_level, bullet_for_level, min_bullets, next_enemy_power)
+        start_to_retain = start_to_retain + start
+        #print level, ' level - ', battle_index, ' battle_index - ', min_bullets, ' min bullets - ', start_to_retain, ' start_to_retain'
         # print min_bullets
 
-    return min_bullets
+    return  powers[0][battle_index] + start_to_retain
 
 ###################################
 if __name__ == '__main__':

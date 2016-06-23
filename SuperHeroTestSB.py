@@ -1,10 +1,11 @@
 import SuperHero as sh
+import os
 import SuperHeroBruteForce as bf
 
 if __name__ == '__main__':
-
-    with open("SuperHero39_input.txt") as f:
-        tests = int(f.readline().strip())  # number of test cases
+    with open(os.path.join("SuperHeroFiles", "SuperHeroIndividualInput39.txt")) as f:
+    #with open(os.path.join("SuperHeroFiles", "SuperHeroIndividualInput60.txt")) as f:
+        tests, correct_score = map(int,(f.readline().strip().split(' ')))  # number of test cases
         for a0 in xrange(tests):
             powers = []
             bullets = []
@@ -16,11 +17,11 @@ if __name__ == '__main__':
                 bullets.append(map(int, f.readline().strip().split(' ')))  # bullets
 
             my_answer = sh.get_min_bullets_backward(levels, enemies, powers, bullets)
-            #brute_force_answer = bf.getMinBulletsBruteForce(levels, powers, bullets)
+            # brute_force_answer = bf.getMinBulletsBruteForce(levels, powers, bullets)
 
-    # print 'test 39 is different: his 88, mine 42.  levels 7, enemies 2'
+    #print 'test 39 is different: his 88, mine 42.  levels 7, enemies 2'
 
-    print my_answer, ' my answer, but it should be 88'
+    print my_answer, ' my answer, but it should be ', correct_score
     #print brute_force_answer, ' brute_force_answer'
 
 """
@@ -29,4 +30,10 @@ test 39 is different: his 88, mine 42.  levels 7, enemies 2
 88  brute_force_answer
 
 # well, where did I go wrong.  Brute force agrees.
+"""
+"""
+Test
+2743  my answer, but it should be  416
+416  brute_force_answer
+
 """
