@@ -74,22 +74,10 @@ def get_min_bullets_backward(levels, enemies, powers, bullets):
         power_for_level = powers[level]
         bullet_for_level = bullets[level]
         min_bullets, battle_index = pick_the_best_battle(power_for_level, bullet_for_level, min_bullets)
-        fight_seq.append((level, battle_index))
-        # print level, ' level - ', battle_index, ' battle_index - ', min_bullets, ' min bullets'
+        print level, ' level - ', battle_index, ' battle_index - ', min_bullets, ' min bullets'
         # print min_bullets
 
-        #using the fight sequence from end to end, I should be able to figure out the short fall
-
-    fight_seq = sorted(fight_seq)
-    ammunition_started = ammunition_acquired = 0
-
-    for level, battle_index in fight_seq:
-        ammunition_started, ammunition_acquired = \
-            defeatEnemy(powers[level][battle_index], bullets[level][battle_index],
-                        ammunition_started, ammunition_acquired)
-
-
-    return -ammunition_started
+    return min_bullets
 
 ###################################
 if __name__ == '__main__':
