@@ -27,23 +27,25 @@ def defeatEnemy(power, bullets, ammunition_started, ammunition_aquired):
 def get_battle_combinations(powers, bullets, players):
     # come back and make this a list comprehension
     ret = []
-    for (power, bullet) in zip(powers, bullets):
+    for i, (power, bullet) in enumerate(zip(powers, bullets)):
         for player in players:
-            ret.append(defeatEnemy(power, bullet, player[0], player[1]))
+            ret.append((defeatEnemy(power, bullet, player[0][0], player[0][1]), player[1] + str(i)))
 
     return ret
 
 
 ###################################
-def getMinBulletsBruteForce(levels, enemies, powers, bullets):
-    plays = [(0, 0)]
+def getMinBulletsBruteForce(levels, powers, bullets):
+    plays = [((0, 0), '~')]
 
     for level in xrange(levels):
         power_for_level = powers[level]
         bullet_for_level = bullets[level]
         plays = get_battle_combinations(power_for_level, bullet_for_level, plays)
 
-    return -max(plays)[0]
+    for p in plays:
+        print p[0][0], '\t', p[0][1], '\t', p[1]
+    return -max(plays)[0][0]
 
 
 ###################################
@@ -61,7 +63,7 @@ if __name__ == '__main__':
     bullets.append(map(int,"3 2 1".split(' '))) #bullets
     bullets.append(map(int,"1 2 3".split(' '))) #bullets
 
-    print getMinBulletsBruteForce(levels, enemies, powers, bullets)
+    print getMinBulletsBruteForce(levels, powers, bullets)
 
 # for chuckles, let's see how bruteforce compares
 # ACTUALLY, DON'T.  IT QUICKLY SOAKS ALL MEMORY AND THEN SOME!

@@ -2,6 +2,25 @@
 import sys
 
 ###################################
+def defeatEnemy(power, bullets, ammunition_started, ammunition_acquired):
+    """
+    Returns new set of ammunition after defeating enemy
+    Ammunition_started could be negative
+    """
+    # start with aquired
+    _acquired = _power = 0
+
+    _started = ammunition_started
+    _power = power - ammunition_acquired
+
+    if _power > 0:
+        _started = ammunition_started - _power
+
+    _acquired = bullets  # even if there is a surplus, we can't carry it forward
+
+    return _started, _acquired
+
+###################################
 # Get optimal starting point, that defeats enemy an has enough to defeat next enemy
 def what_should_player_start_with(power, bullets, next_enemy_power):
     """
@@ -9,10 +28,13 @@ def what_should_player_start_with(power, bullets, next_enemy_power):
     In order to beat the next enemy
     power = enemy power
     bullets = enemy bullets
-    next_enemy_power = next enemys power
+    next_enemy_power = next enemy's power
     """
-    # start with aquired
     ret = power  # have to have enough to defeat the enemy
+
+    # Ideally, net_bullets will be sufficient for the next enemy, which means
+    # I don't have to use any of the ones I started with
+
     # In order to defeat this enemy, the sum needs to be greater than or equal to 'power'
     # and there needs to be enough left over to defeat the next enemy
     increment = next_enemy_power - bullets
@@ -36,7 +58,7 @@ def pick_the_best_battle(ps, bs, ml):
     for i, (power, bullet) in enumerate(zip(ps, bs)):
         bullets_needed = what_should_player_start_with(power, bullet, ml)
         # print (bullets_needed)
-        ret.append(bullets_needed)
+        ret.append(((bullets_needed),i))
 
     # The best one is the one is the battle that has to *start*
     # with the lowest in order to be larger than ml
@@ -45,14 +67,30 @@ def pick_the_best_battle(ps, bs, ml):
 
 ###################################
 def get_min_bullets_backward(levels, enemies, powers, bullets):
-    min_bullets = min(powers[levels - 1])
+    min_bullets, battle_index =  min( (powers[levels - 1][i],i) for i in xrange(len(powers[levels - 1])))
+    fight_seq = []
+    fight_seq.append((levels - 1, battle_index))  # last battle working backward
     for level in reversed(xrange(levels - 1)):
         power_for_level = powers[level]
         bullet_for_level = bullets[level]
-        min_bullets = pick_the_best_battle(power_for_level, bullet_for_level, min_bullets)
+        min_bullets, battle_index = pick_the_best_battle(power_for_level, bullet_for_level, min_bullets)
+        fight_seq.append((level, battle_index))
+        # print level, ' level - ', battle_index, ' battle_index - ', min_bullets, ' min bullets'
         # print min_bullets
 
-    return min_bullets
+        #using the fight sequence from end to end, I should be able to figure out the short fall
+
+    fight_seq = sorted(fight_seq)
+    ammunition_started = ammunition_acquired = 0
+
+    for level, battle_index in fight_seq:
+        ammunition_started, ammunition_acquired = \
+            defeatEnemy(powers[level][battle_index], bullets[level][battle_index],
+                        ammunition_started, ammunition_acquired)
+
+
+    return -ammunition_started
+
 ###################################
 if __name__ == '__main__':
 

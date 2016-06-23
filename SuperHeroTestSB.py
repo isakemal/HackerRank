@@ -16,16 +16,17 @@ if __name__ == '__main__':
                 bullets.append(map(int, f.readline().strip().split(' ')))  # bullets
 
             my_answer = sh.get_min_bullets_backward(levels, enemies, powers, bullets)
-            brute_force_answer = bf.getMinBulletsBruteForce(levels, enemies, powers, bullets)
+            #brute_force_answer = bf.getMinBulletsBruteForce(levels, powers, bullets)
 
-    print 'test 39 is different: his 88, mine 42.  levels 7, enemies 2'
-    print my_answer, ' my answer'
-    print brute_force_answer, ' brute_force_answer'
+    # print 'test 39 is different: his 88, mine 42.  levels 7, enemies 2'
+
+    print my_answer, ' my answer, but it should be 88'
+    #print brute_force_answer, ' brute_force_answer'
 
 """
 test 39 is different: his 88, mine 42.  levels 7, enemies 2
 42  my answer
 88  brute_force_answer
 
-# well, where did I go wrong.
+# well, where did I go wrong.  Brute force agrees.
 """
