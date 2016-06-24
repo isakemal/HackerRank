@@ -52,7 +52,7 @@ def what_should_player_start_with(power, bullets, minimum_needed_for_next, next_
     # working backwards, start get's used when there aren't
     # enough bullets in current level to defeat next level
 
-    return ret, start
+    return start, ret
 
 
 ###################################
@@ -69,10 +69,11 @@ def pick_the_best_battle(ps, bs, ml, np):
     ret = []
 
     for i, (power, bullet) in enumerate(zip(ps, bs)):
-        bullets_needed, start_to_retain = what_should_player_start_with(power, bullet, ml, np )
+        start_to_retain, bullets_needed  = what_should_player_start_with(power, bullet, ml, np )
         # print (bullets_needed)
-        ret.append(((bullets_needed, start_to_retain, power),i))
+        ret.append(((start_to_retain, bullets_needed, power),i))
 
+    # Need to order by start_to_retain and then bullets needed
     # The best one is the one is the battle that has to *start*
     # with the lowest in order to be larger than ml
     return min(ret)
@@ -86,9 +87,9 @@ def get_min_bullets_backward(levels, enemies, powers, bullets):
     for level in reversed(xrange(levels - 1)):
         power_for_level = powers[level]
         bullet_for_level = bullets[level]
-        (min_bullets, start, next_enemy_power), battle_index = pick_the_best_battle(power_for_level, bullet_for_level, min_bullets, next_enemy_power)
+        (start, min_bullets, next_enemy_power), battle_index = pick_the_best_battle(power_for_level, bullet_for_level, min_bullets, next_enemy_power)
         start_to_retain = start_to_retain + start
-        #print level, ' level - ', battle_index, ' battle_index - ', min_bullets, ' min bullets - ', start_to_retain, ' start_to_retain'
+        print level, ' level - ', battle_index, ' battle_index - ', min_bullets, ' min bullets - ', start_to_retain, ' start_to_retain'
         # print min_bullets
 
     return  powers[0][battle_index] + start_to_retain
