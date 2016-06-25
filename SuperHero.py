@@ -1,28 +1,183 @@
 # Enter your code here. Read input from STDIN. Print output to STDOUT
 import sys
 
+# battle_state = namedtuple('battle_state', 'level_index', 'battle_index', 'pre_initial',
+#                                            'post_initial', 'pre_acquired', 'post_acquired',
+#                                            'pre_total', 'post_total' )
+
+def get_min_bullets(levels, enemies, powers, bullets):
+    """
+    The way this works is that it creates several pathways through the battles
+    Once it has all of the pathways completed, it will take the best segments from each pathway
+    to build the final pathway and final score
+    """
+    backward = get_backward_path(levels, enemies, powers, bullets)
+    forward = get_forward_path(levels, enemies, powers, bullets)
+
+    """
+    # DEBUG
+    print "backward"
+    for path in backward:
+        print path
+    """
+    """
+    print "forward"
+    for path in forward:
+        print path
+    # DEBUG
+    """
+
+    # Now I have two paths to compare
+    # What I want to do is find all of the levels where they battle the same enemy
+    # Where they exist, I want to pick the path where the "pre_initial" delta is least.
+
+    # Find levels where battle_index is the same
+    []
+
+
+    return ('backward',backward[-1]["pre_initial"], 'forward', forward[-1]["pre_initial"])
+
+
+def get_forward_path (levels, enemies, powers, bullets):
+    """
+    Identifies the best path starting with first battle and working forwards
+    battle choice is based on minimum power
+    """
+    forward_path = []
+
+#    min_power, battle_index = min((powers[0][i], i) for i in xrange(len(powers[0])))
+    current_battle = {"level_index": -1, "power": 0, "pre_initial": 0, "post_initial": 0, "post_acquired": 0}
+
+    for level in xrange(0, levels):
+        level_info = zip(powers[level], bullets[level])
+        next_battle = pick_battle_with_min_power(level_info, current_battle)
+        next_battle["level_index"] = level
+        forward_path.append(next_battle)
+        current_battle = next_battle
+
+    return forward_path
+
+def get_backward_path(levels, enemies, powers, bullets):
+    """
+    Identifies the best path starting with last battle and working backwards
+    battle choice is based on minimum pre ammunition required
+    """
+
+    backward_path = []
+    # start at last battle and move backwards
+    # minimum bullets as selection criteria
+
+    min_bullets, battle_index = min((powers[levels - 1][i], i) for i in xrange(len(powers[levels - 1])))
+    last_battle = {"level_index":levels-1,"battle_index":battle_index, "power":min_bullets, "pre_total":min_bullets, "pre_initial":0, "post_initial":0}
+
+    backward_path.append(last_battle)
+
+    for level in reversed(xrange(levels - 1)):
+        level_info = zip(powers[level], bullets[level])
+        previous_battle = pick_battle_with_min_bullets(level_info, last_battle)
+        previous_battle["level_index"] = level
+        backward_path.append(previous_battle)
+        last_battle = previous_battle
+
+
+    #update pre and post data now that we have completed the path
+    backward_path = sorted(backward_path, key=lambda k: k["level_index"])
+    previous_battle = backward_path[0]
+    previous_battle['pre_initial'] = 0
+    previous_battle['post_initial'] = -previous_battle['post_initial'] + previous_battle['power']
+    for battle in backward_path[1:]:
+        battle['pre_initial']= previous_battle['post_initial']
+        battle['post_initial'] = battle['pre_initial'] - battle['post_initial']
+        previous_battle = battle
+    return backward_path
+
+def pick_battle_with_min_power(level_info, battle_before_this_one):
+    """
+    Choose battle that requires the least amount of bullets
+    (the one with the least power)
+    """
+    #This is a relatively easy one to pick.  What this ends up being
+    # is a way to stage the next battle state
+    # min_power, battle_index = min((powers[0][i], i) for i in xrange(len(powers[0])))
+
+
+    battle_results = []
+    #I could do it this way, but I want to capture all of the battles
+
+    for i, (power, bullet) in enumerate (level_info):
+        battle_result = {"battle_index": i, "power":power, "post_acquired":bullet }
+        battle_result["pre_initial"]=battle_result["post_initial"]=battle_before_this_one["post_initial"]
+        if battle_before_this_one["post_acquired"] < power:
+            battle_result["post_initial"] += (power - battle_before_this_one["post_acquired"])
+
+        battle_results.append(battle_result)
+    # -post_acquired to get the max value for post acquired in the event of a tie
+    # min_set = min([(x['power'], -x['post_acquired'], i) for i, x in enumerate(battle_results)])
+    min_set = min([(x['power'],i) for i, x in enumerate(battle_results)])
+    return battle_results[min_set[1]]
+
+def pick_battle_with_min_bullets(level_info, battle_after_this_one):
+    """
+    Chooses battle that requires the least amount of bullets to start
+    returns battle state
+    """
+    # for each possible battle, calculate as much of the state as possible
+    battle_results = []
+    for i, (power, bullet) in enumerate(level_info):
+        battle_result = {"battle_index":i, "power":power, "post_acquired":bullet}
+
+        # Let's start the calculation.   Things we can get from each battle
+        # 'pre_initial',
+        #'post_initial',  'post_acquired',
+        #'pre_total', 'post_total'
+
+
+        increment =  battle_after_this_one["pre_total"] - bullet
+        initial_increment =  battle_after_this_one["power"]- bullet
+
+        battle_result["pre_total"] = power #Need at least enough to defeat this enemy
+        if increment > 0:
+            battle_result["pre_total"] += increment
+
+        battle_result["pre_initial"] = battle_result["post_initial"]= 0
+
+        if initial_increment > 0:
+            battle_result["pre_initial"] += initial_increment
+            battle_result["post_initial"] -= initial_increment
+
+        battle_results.append(battle_result)
+
+    #Now I have all of the possible results.  Pick the one who's pre_initial is lowest.
+    #in case of a tie, pick the next one whose pre_total is the lowest
+    # This one seems to be less useful
+    # min_set = min([(x['pre_total'], x['pre_initial'], i) for i, x in enumerate(battle_results)])
+    min_set = min([(x['pre_initial'], x['pre_total'], i) for i, x in enumerate(battle_results)])
+    return battle_results[min_set[2]]
+
 ###################################
-def defeatEnemy(power, bullets, ammunition_started, ammunition_acquired):
+def defeatEnemy(power, bullets, pre_initial, pre_acquired):
     """
-    Returns new set of ammunition after defeating enemy
-    Ammunition_started could be negative
+    Returns post_initial and post_acquired after defeating enemy
     """
-    # start with aquired
-    _acquired = _power = 0
 
-    _started = ammunition_started
-    _power = power - ammunition_acquired
+    # always true
+    post_acquired = bullets
 
-    if _power > 0:
-        _started = ammunition_started - _power
+    # Post initial will depend on whether we had enough acquired bullets for the battle
+    post_initial = pre_initial
 
-    _acquired = bullets  # even if there is a surplus, we can't carry it forward
+    # This will go negative if we don't know what the pre_initial is (that is, if we are going backward)
+    if pre_acquired < power:
+        post_initial = post_initial - (power - pre_acquired)
 
-    return _started, _acquired
+    return post_initial, post_acquired
+
+
+
 
 ###################################
 # Get optimal starting point, that defeats enemy an has enough to defeat next enemy
-def what_should_player_start_with(power, bullets, minimum_needed_for_next, next_enemy_power):
+def what_should_player_start_with(power, bullet, minimum_needed_for_next, next_enemy_power):
     """
     Returns the best case scenario of what a player should start with
     In order to beat the next enemy
@@ -32,27 +187,28 @@ def what_should_player_start_with(power, bullets, minimum_needed_for_next, next_
     start = the amount of the starting ammo you need to retain
         even if there is sufficient bullets remaining
     """
-    ret = power  # have to have enough to defeat the enemy
+    pre_total = power  # have to have enough to defeat the enemy
 
     # Ideally, net_bullets will be sufficient for the next enemy, which means
     # I don't have to use any of the ones I started with
 
     # In order to defeat this enemy, the sum needs to be greater than or equal to 'power'
     # and there needs to be enough left over to defeat the next enemy
-    increment = minimum_needed_for_next - bullets
-    start_increment = next_enemy_power - bullets
-    # print bullets, ' acquired ', increment, ' increment'
-    start = 0
+    increment = minimum_needed_for_next - bullet
+    initial_increment = next_enemy_power - bullet
+
+    pre_initial = 0
+
     if increment > 0:
-        ret = ret + increment
-    if start_increment > 0:
-        start = start_increment
+        pre_total = pre_total + increment
+
+    if initial_increment > 0:
+        pre_initial = initial_increment
 
 
     # working backwards, start get's used when there aren't
     # enough bullets in current level to defeat next level
-
-    return start, ret
+    return pre_initial, pre_total
 
 
 ###################################
