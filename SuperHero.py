@@ -14,28 +14,45 @@ def get_min_bullets(levels, enemies, powers, bullets):
     backward = get_backward_path(levels, enemies, powers, bullets)
     forward = get_forward_path(levels, enemies, powers, bullets)
 
+    #print backward
+    #print forward
     """
     # DEBUG
     print "backward"
     for path in backward:
         print path
-    """
-    """
     print "forward"
     for path in forward:
         print path
     # DEBUG
     """
-
     # Now I have two paths to compare
     # What I want to do is find all of the levels where they battle the same enemy
     # Where they exist, I want to pick the path where the "pre_initial" delta is least.
+    b_initial = f_initial = initial_so_far = 0
+    pick_next_true = False
+    index_of_last_snapshot = -1
+    for i, (b, f) in enumerate(zip(backward, forward)):
+        if b['battle_index'] == f['battle_index']:
+            if pick_next_true:
+                index_of_last_snapshot = i
+                b_delta = b['post_initial'] - b_initial
+                f_delta = f['post_initial'] - f_initial
+                b_initial = b['post_initial']
+                f_initial = f['post_initial']
+                initial_so_far += min(b_delta, f_delta)
+                pick_next_true = False
+        else:
+            pick_next_true = True
 
-    # Find levels where battle_index is the same
-    []
+    if index_of_last_snapshot < len(backward)-1:
+        # We need to capture the final distance
+        b_delta = backward[-1]['post_initial'] - b_initial
+        f_delta = forward[-1]['post_initial'] - f_initial
+        initial_so_far += min(b_delta, f_delta)
 
-
-    return ('backward',backward[-1]["pre_initial"], 'forward', forward[-1]["pre_initial"])
+    #return ('backward',backward[-1]["pre_initial"], 'forward', forward[-1]["pre_initial"])
+    return initial_so_far
 
 
 def get_forward_path (levels, enemies, powers, bullets):
@@ -307,7 +324,7 @@ if __name__ == '__main__':
             for a2 in xrange(levels):
                 bullets.append(map(int, f.readline().strip().split(' ')))  # bullets
 
-            my_answer = get_min_bullets_backward(levels, enemies, powers, bullets)
+            my_answer = get_min_bullets(levels, enemies, powers, bullets)
             if my_answer <> correct_answers[a0]:
                 print "test {} is different: his {}, mine {}.  levels {}, enemies {} ".format(a0, correct_answers[a0], my_answer, levels, enemies)
 
