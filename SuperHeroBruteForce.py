@@ -110,7 +110,7 @@ if __name__ == '__main__':
 
 # for chuckles, let's see how bruteforce compares
 # ACTUALLY, DON'T.  IT QUICKLY SOAKS ALL MEMORY AND THEN SOME!
-"""
+
 with open("SuperHeroOutput00.txt") as f:
     correct_answers = [int(line) for line in f]
 
@@ -127,10 +127,12 @@ with open("SuperHeroInput00.txt") as f:
         for a2 in xrange(levels):
             bullets.append(map(int, f.readline().strip().split(' ')))  # bullets
 
-        my_answer = getMinBulletsBruteForce(levels, enemies, powers, bullets)
+        my_answer = getMinBulletsBruteForce(levels, powers, bullets)
+
         if my_answer <> correct_answers[a0]:
             print "test {} is different: his {}, mine {}.  levels {}, enemies {} ".format(a0, correct_answers[a0],
                                                                                           my_answer, levels, enemies)
-
+        else:
+            print "test {} is SAME: his {}, mine {}.  levels {}, enemies {} ".format(a0, correct_answers[a0],
+                                                                                          my_answer, levels, enemies)
         my_answers.append(my_answer)
-"""

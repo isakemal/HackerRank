@@ -52,6 +52,11 @@ def get_min_bullets(levels, enemies, powers, bullets):
         print path
     # DEBUG
 
+    forward_battles = [x['battle_index'] for x in forward ]
+    backward_battles = [x['battle_index'] for x in backward]
+    return get_min_combination_brute_force(forward_battles, backward_battles, powers, bullets)
+
+    """
     # Now I have two paths to compare
     # What I want to do is find all of the levels where they battle the same enemy
     # Where they exist, I want to pick the path where the "pre_initial" delta is least.
@@ -78,6 +83,45 @@ def get_min_bullets(levels, enemies, powers, bullets):
         initial_so_far += min(b_delta, f_delta)
 
     return initial_so_far
+    """
+
+def get_min_combination_brute_force(path_a, path_b, powers, bullets):
+    # build all possible paths through the lists
+    current_min = 0
+
+    level_count = len(path_a)
+    one_path = [0 for x in xrange(level_count)]
+    two_paths = [path_a , path_b]
+
+
+    loop_counter = 0
+    while one_path is not None:
+        loop_counter += 1
+        if loop_counter % 50000 == 0:
+            print one_path
+
+        ammunition_started = ammunition_aquired = 0
+
+        for level_index, battle_index in enumerate(one_path):
+            ammunition_started, ammunition_aquired = \
+                defeatEnemy(powers[level_index][two_paths[level_index]], bullets[level_index][two_paths[level_index]], ammunition_started, ammunition_aquired)
+        if current_min == 0:
+            current_min = -ammunition_started
+        else:
+            if -ammunition_started < current_min:
+                current_min = -ammunition_started
+
+        one_path = increment_by_one(one_path, level_count-1, 2)
+
+    return current_min
+
+
+def increment_by_one(list_of_nums, starting_idx, base):
+    while starting_idx >= 0:
+        list_of_nums[starting_idx] = (list_of_nums[starting_idx] + 1) % base
+        if list_of_nums[starting_idx] == 0:
+            return increment_by_one(list_of_nums, starting_idx - 1, base)
+        return list_of_nums
 
 
 def get_forward_path (levels, enemies, powers, bullets):
@@ -206,6 +250,25 @@ def pick_battle_with_min_bullets(level_info, battle_after_this_one):
     # min_set = min([(x['pre_total'], x['pre_initial'], i) for i, x in enumerate(battle_results)])
     min_set = min([(x['pre_initial'], x['pre_total'], i) for i, x in enumerate(battle_results)])
     return battle_results[min_set[2]]
+
+def defeatEnemy(power, bullets, ammunition_started, ammunition_aquired):
+    """
+    Returns new set of ammunition after defeating enemy
+    Ammunition_started could be negative
+    """
+    # start with aquired
+    _acquired = _power = 0
+
+    _started = ammunition_started
+    _power = power - ammunition_aquired
+
+    if _power > 0:
+        _started = ammunition_started - _power
+
+    _acquired = bullets  # even if there is a surplus, we can't carry it forward
+
+    return _started, _acquired
+
 
 ###################################
 if __name__ == '__main__':

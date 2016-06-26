@@ -27,12 +27,12 @@ if __name__ == '__main__':
                 for a2 in xrange(levels):
                     bullets.append(map(int, f.readline().strip().split(' ')))  # bullets
 
-                # my_answer = sh.get_min_bullets(levels, enemies, powers, bullets)
-                brute_force_answer = bf.getMinBulletsBruteForce(levels, powers, bullets)
+                my_answer = sh.get_min_bullets(levels, enemies, powers, bullets)
+                #brute_force_answer = bf.getMinBulletsBruteForce(levels, powers, bullets)
 
 
-        # print my_answer, ' my answer, and it should be ', correct_score
-        print brute_force_answer, ' brute_force_answer, and it should be ', correct_score
+        print my_answer, ' my answer, and it should be ', correct_score
+        #print brute_force_answer, ' brute_force_answer, and it should be ', correct_score
 
 
 """
