@@ -4,7 +4,31 @@ import sys
 # battle_state = namedtuple('battle_state', 'level_index', 'battle_index', 'pre_initial',
 #                                            'post_initial', 'pre_acquired', 'post_acquired',
 #                                            'pre_total', 'post_total' )
+"""
+def get_min_bullets(levels, enemies, powers, bullets):
+    forward = get_forward_path(levels, enemies, powers, bullets)
 
+    # This gives us the best score based as measured by the least amount of bullets
+    # spent per level (maximizing for number of bullets acquired)
+
+    # The next loop has us going backwards
+    # and picking battles that may spend a bit more but set's us up for savings down the road.
+
+    for i, fwd_battle in reversed(list(enumerate(forward))):
+        #check to see if the battle cost anything
+        battle_cost = fwd_battle['post_initial'] - fwd_battle['pre_initial']
+        if battle_cost > 0:
+            # we have a situation where we might be able to do better
+            power_to_beat = fwd_battle['power']
+
+            prev_level_info = zip(powers[i-1], bullets[i-1])
+
+            for i, (power, bullet) in enumerate(prev_level_info):
+            # Are there any choices where the potential bullets are more than the next cost?
+                if(bullet >= power_to_beat):
+
+
+"""
 def get_min_bullets(levels, enemies, powers, bullets):
     """
     The way this works is that it creates several pathways through the battles
@@ -16,6 +40,8 @@ def get_min_bullets(levels, enemies, powers, bullets):
 
     #print backward
     #print forward
+
+    """
     """
     # DEBUG
     print "backward"
@@ -25,7 +51,7 @@ def get_min_bullets(levels, enemies, powers, bullets):
     for path in forward:
         print path
     # DEBUG
-    """
+
     # Now I have two paths to compare
     # What I want to do is find all of the levels where they battle the same enemy
     # Where they exist, I want to pick the path where the "pre_initial" delta is least.
@@ -51,7 +77,6 @@ def get_min_bullets(levels, enemies, powers, bullets):
         f_delta = forward[-1]['post_initial'] - f_initial
         initial_so_far += min(b_delta, f_delta)
 
-    #return ('backward',backward[-1]["pre_initial"], 'forward', forward[-1]["pre_initial"])
     return initial_so_far
 
 
@@ -63,7 +88,7 @@ def get_forward_path (levels, enemies, powers, bullets):
     forward_path = []
 
 #    min_power, battle_index = min((powers[0][i], i) for i in xrange(len(powers[0])))
-    current_battle = {"level_index": -1, "power": 0, "pre_initial": 0, "post_initial": 0, "post_acquired": 0}
+    current_battle = {"level_index": -1, "power": 0, "pre_initial": 0, "post_initial": 0, "post_acquired": 0, "pre_total":0, "pre_acquired":0}
 
     for level in xrange(0, levels):
         level_info = zip(powers[level], bullets[level])
@@ -102,8 +127,10 @@ def get_backward_path(levels, enemies, powers, bullets):
     previous_battle = backward_path[0]
     previous_battle['pre_initial'] = 0
     previous_battle['post_initial'] = -previous_battle['post_initial'] + previous_battle['power']
+    previous_battle['pre_acquired'] = 0
     for battle in backward_path[1:]:
         battle['pre_initial']= previous_battle['post_initial']
+        battle['pre_acquired'] = previous_battle['post_acquired']
         battle['post_initial'] = battle['pre_initial'] - battle['post_initial']
         previous_battle = battle
     return backward_path
@@ -119,19 +146,28 @@ def pick_battle_with_min_power(level_info, battle_before_this_one):
 
 
     battle_results = []
-    #I could do it this way, but I want to capture all of the battles
 
     for i, (power, bullet) in enumerate (level_info):
         battle_result = {"battle_index": i, "power":power, "post_acquired":bullet }
         battle_result["pre_initial"]=battle_result["post_initial"]=battle_before_this_one["post_initial"]
+        battle_result["pre_acquired"]=battle_before_this_one["post_acquired"]
+
         if battle_before_this_one["post_acquired"] < power:
             battle_result["post_initial"] += (power - battle_before_this_one["post_acquired"])
 
+        battle_result["pre_total"] = battle_before_this_one["post_initial"] + battle_before_this_one["post_acquired"]
         battle_results.append(battle_result)
     # -post_acquired to get the max value for post acquired in the event of a tie
     # min_set = min([(x['power'], -x['post_acquired'], i) for i, x in enumerate(battle_results)])
-    min_set = min([(x['power'],i) for i, x in enumerate(battle_results)])
-    return battle_results[min_set[1]]
+
+    #The order of precedence is:
+    #pick the minimum delta in acquired, and if there is a tie, pick the one that provides the best 'post acquired'
+
+    min_set = min([(x['post_initial']-x['pre_initial'], -x['post_acquired'], i) for i, x in enumerate(battle_results)])
+    return battle_results[min_set[2]]
+
+    #min_set = min([(x['power'],i) for i, x in enumerate(battle_results)])
+    #return battle_results[min_set[1]]
 
 def pick_battle_with_min_bullets(level_info, battle_after_this_one):
     """
@@ -172,141 +208,7 @@ def pick_battle_with_min_bullets(level_info, battle_after_this_one):
     return battle_results[min_set[2]]
 
 ###################################
-def defeatEnemy(power, bullets, pre_initial, pre_acquired):
-    """
-    Returns post_initial and post_acquired after defeating enemy
-    """
-
-    # always true
-    post_acquired = bullets
-
-    # Post initial will depend on whether we had enough acquired bullets for the battle
-    post_initial = pre_initial
-
-    # This will go negative if we don't know what the pre_initial is (that is, if we are going backward)
-    if pre_acquired < power:
-        post_initial = post_initial - (power - pre_acquired)
-
-    return post_initial, post_acquired
-
-
-
-
-###################################
-# Get optimal starting point, that defeats enemy an has enough to defeat next enemy
-def what_should_player_start_with(power, bullet, minimum_needed_for_next, next_enemy_power):
-    """
-    Returns the best case scenario of what a player should start with
-    In order to beat the next enemy
-    power = enemy power
-    bullets = enemy bullets
-    next_enemy_power = next enemy's power
-    start = the amount of the starting ammo you need to retain
-        even if there is sufficient bullets remaining
-    """
-    pre_total = power  # have to have enough to defeat the enemy
-
-    # Ideally, net_bullets will be sufficient for the next enemy, which means
-    # I don't have to use any of the ones I started with
-
-    # In order to defeat this enemy, the sum needs to be greater than or equal to 'power'
-    # and there needs to be enough left over to defeat the next enemy
-    increment = minimum_needed_for_next - bullet
-    initial_increment = next_enemy_power - bullet
-
-    pre_initial = 0
-
-    if increment > 0:
-        pre_total = pre_total + increment
-
-    if initial_increment > 0:
-        pre_initial = initial_increment
-
-
-    # working backwards, start get's used when there aren't
-    # enough bullets in current level to defeat next level
-    return pre_initial, pre_total
-
-
-###################################
-def pick_the_best_battle(ps, bs, ml, np):
-    """
-    Returns the starting bullets for the battle is the least amount of the ammunition required
-    in order to defeat the next level.
-
-    ps: array of powers for the level
-    bs:  array of bullets for the level
-    ml: minimum_for_next_level:  minimum ammunition needed to defeat next level
-    np: next enemy power:  power of next enemy (different than minimum needed for next level)
-    """
-    ret = []
-
-    for i, (power, bullet) in enumerate(zip(ps, bs)):
-        start_to_retain, bullets_needed  = what_should_player_start_with(power, bullet, ml, np )
-        # print (bullets_needed)
-        ret.append(((start_to_retain, bullets_needed, power),i))
-
-    # Need to order by start_to_retain and then bullets needed
-    # The best one is the one is the battle that has to *start*
-    # with the lowest in order to be larger than ml
-    return min(ret)
-
-
-###################################
-def get_min_bullets_backward(levels, enemies, powers, bullets):
-    min_bullets, battle_index =  min( (powers[levels - 1][i],i) for i in xrange(len(powers[levels - 1])))
-    next_enemy_power = min_bullets
-    start_to_retain = 0
-    for level in reversed(xrange(levels - 1)):
-        power_for_level = powers[level]
-        bullet_for_level = bullets[level]
-        (start, min_bullets, next_enemy_power), battle_index = pick_the_best_battle(power_for_level, bullet_for_level, min_bullets, next_enemy_power)
-        start_to_retain = start_to_retain + start
-        print level, ' level - ', battle_index, ' battle_index - ', min_bullets, ' min bullets - ', start_to_retain, ' start_to_retain'
-        # print min_bullets
-
-    return  powers[0][battle_index] + start_to_retain
-
-###################################
 if __name__ == '__main__':
-
-    levels = 3
-    enemies = 3
-    powers = []
-    bullets = []
-    powers.append(map(int,"3 2 1".split(' '))) #power
-    powers.append(map(int,"1 2 3".split(' '))) #power
-    powers.append(map(int,"3 2 1".split(' '))) #power
-
-    bullets.append(map(int,"1 2 3".split(' '))) #bullets
-    bullets.append(map(int,"3 2 1".split(' '))) #bullets
-    bullets.append(map(int,"1 2 3".split(' '))) #bullets
-
-    levels2 = 3
-    enemies2 = 3
-    powers2 = []
-    bullets2 = []
-    powers2.append(map(int,"3 2 5".split(' '))) #power
-    powers2.append(map(int,"8 9 1".split(' '))) #power
-    powers2.append(map(int,"4 7 6".split(' '))) #power
-
-    bullets2.append(map(int,"1 1 1".split(' '))) #bullets
-    bullets2.append(map(int,"1 1 1".split(' '))) #bullets
-    bullets2.append(map(int,"1 1 1".split(' '))) #bullets
-    """
-    tests = int(raw_input().strip())  # number of test cases
-
-    for a0 in xrange(tests):
-        powers = []
-        bullets = []
-        levels, enemies = map(int, raw_input().strip().split(' '))  # number of levels, number of enemies on each level
-        for a1 in xrange(levels):
-            powers.append(map(int, raw_input().strip().split(' ')))  # power
-        for a2 in xrange(levels):
-            bullets.append(map(int, raw_input().strip().split(' ')))  # bullets
-    """
-    # print get_min_bullets_backward(levels, enemies, powers, bullets)
-    # print get_min_bullets_backward(levels2, enemies2, powers2, bullets2)
 
     with open("SuperHeroOutput00.txt") as f:
         correct_answers = [int(line) for line in f]

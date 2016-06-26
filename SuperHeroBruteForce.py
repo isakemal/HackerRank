@@ -22,7 +22,6 @@ def defeatEnemy(power, bullets, ammunition_started, ammunition_aquired):
 
     return _started, _acquired
 
-
 ###################################
 def get_battle_combinations(powers, bullets, players):
     # come back and make this a list comprehension
@@ -35,7 +34,7 @@ def get_battle_combinations(powers, bullets, players):
 
 
 ###################################
-def getMinBulletsBruteForce(levels, powers, bullets):
+def getMinBulletsBruteForce2(levels, powers, bullets):
     plays = [((0, 0), '~')]
 
     for level in xrange(levels):
@@ -45,7 +44,51 @@ def getMinBulletsBruteForce(levels, powers, bullets):
 
     for p in plays:
         print p[0][0], '\t', p[0][1], '\t', p[1]
+
     return -max(plays)[0][0]
+
+
+
+
+# Instead of keeping everything in memory, this one calculates full path score and keeps it
+# if it is less than one already found.
+def getMinBulletsBruteForce(levels, powers, bullets):
+    # build all possible paths through the system
+    # can I do a generator that does it?
+    current_min = 0
+    one_path = [0 for x in xrange(levels)]
+    #loop_counter = 0
+    while one_path is not None:
+        #loop_counter += 1
+        #if loop_counter % 50000 == 0:
+            #print one_path
+
+
+
+        ammunition_started = ammunition_aquired = 0
+        for level_index, battle_index in enumerate(one_path):
+            ammunition_started, ammunition_aquired = \
+                defeatEnemy(powers[level_index][battle_index], bullets[level_index][battle_index], ammunition_started, ammunition_aquired)
+
+
+        if current_min == 0:
+            current_min = -ammunition_started
+        else:
+            if -ammunition_started < current_min:
+                current_min = -ammunition_started
+
+        one_path = increment_by_one(one_path, levels-1, len(powers[0]))
+
+    return current_min
+
+
+# not quite a generator, but hopefully it'll do
+def increment_by_one(list_of_nums, starting_idx, base):
+    while starting_idx >= 0:
+        list_of_nums[starting_idx] = (list_of_nums[starting_idx] + 1) % base
+        if list_of_nums[starting_idx] == 0:
+            return increment_by_one(list_of_nums, starting_idx - 1, base)
+        return list_of_nums
 
 
 ###################################
